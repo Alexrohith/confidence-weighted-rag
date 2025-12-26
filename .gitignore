@@ -1,0 +1,16 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Vector DB / Models
+*.faiss
+*.pkl
+
+# Logs
+*.log
