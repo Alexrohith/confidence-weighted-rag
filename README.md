@@ -1,190 +1,109 @@
-Confidence-Weighted Multi-Agent RAG (CW-MARAG)
+# Confidence-Weighted Multi-Agent Retrieval-Augmented Generation (CW-MARAG)
 
-A contradiction-aware, confidence-driven Retrieval-Augmented Generation architecture for grounded question answering from documents.
+## Abstract
 
-📌 Overview
+Retrieval-Augmented Generation (RAG) systems often suffer from hallucinations when retrieved evidence is incomplete, noisy, or contradictory. This repository presents **CW-MARAG**, a confidence-weighted multi-agent RAG architecture that explicitly models evidence reliability and contradiction before generation. The system employs multiple specialized retrieval agents whose outputs are evaluated, scored, and arbitrated using confidence-based fusion, enabling grounded responses and principled abstention when reliable answers cannot be determined.
 
-Confidence-Weighted Multi-Agent Retrieval-Augmented Generation (CW-MARAG) is a novel RAG architecture designed to reduce hallucinations and handle contradictory evidence in document-based question answering systems.
+---
 
-Unlike conventional RAG pipelines that rely on a single retriever or naive score aggregation, CW-MARAG employs multiple specialized retrieval agents whose outputs are evaluated, weighted, and arbitrated using confidence-aware fusion before generation.
+## 1. Motivation
 
-The system is particularly suited for:
+Conventional RAG pipelines typically aggregate retrieved documents using similarity scores alone. Such approaches fail to account for:
 
-Academic & legal documents
+- Conflicting evidence across documents  
+- Uneven reliability of retrieval signals  
+- Overconfident generation from weak context  
 
-Policy PDFs
+CW-MARAG addresses these limitations by introducing **confidence-aware arbitration** between independent retrieval agents.
 
-Technical manuals
+---
 
-Any domain where contradictions and uncertainty matter
+## 2. System Overview
 
-🧠 Core Idea
+The system is organized into three primary stages:
 
-Not all retrieved evidence deserves equal trust.
+1. Multi-Agent Retrieval  
+2. Confidence Scoring and Arbitration  
+3. Controlled Generation  
 
-CW-MARAG explicitly models this by:
+Each stage is designed to reduce hallucination risk while preserving answer usefulness.
 
-Using multiple retrieval perspectives
+---
 
-Assigning confidence scores to each evidence chunk
+## 3. Multi-Agent Retrieval
 
-Detecting contradictions
+CW-MARAG uses multiple independent retrieval agents, each optimized for a distinct perspective:
 
-Allowing the generator to abstain when evidence is insufficient or conflicting
+### Semantic Retriever
+Captures semantic similarity using dense embeddings.
 
-🏗️ System Architecture
-🔹 Multi-Agent Retrieval Layer
+### Keyword Retriever
+Identifies lexical overlap and exact term matches.
 
-Independent agents retrieve evidence using different strategies:
+### Temporal Retriever
+Incorporates time-aware relevance where applicable.
 
-Semantic Retriever – dense embeddings (semantic similarity)
+### Contradiction Retriever
+Detects statements that conflict with dominant evidence.
 
-Keyword Retriever – lexical / term-based matching
+The independence of these agents increases recall while enabling disagreement analysis.
 
-Temporal Retriever – time-aware relevance
+---
 
-Contradiction Retriever – detects conflicting statements
+## 4. Confidence Scoring and Arbitration
 
-Each agent operates independently, improving coverage and robustness.
+Each retrieved evidence chunk is evaluated along multiple dimensions, including:
 
-🔹 Confidence Scoring & Arbitration
+- Retrieval strength  
+- Cross-agent agreement  
+- Presence of contradiction signals  
 
-Each retrieved chunk is evaluated on:
+Evidence is classified as:
 
-Retrieval strength
+- Trusted  
+- Contradictory  
+- Low-confidence  
 
-Agreement with other agents
+A fusion module arbitrates which evidence is safe to forward to the generation stage.
 
-Contradiction signals
+---
 
-Chunks are labeled as:
+## 5. Controlled Generation
 
-Trusted evidence
+The generation module is explicitly constrained to:
 
-Contradictory evidence
+- Use only trusted evidence  
+- Abstain when evidence is insufficient or contradictory  
 
-Low-confidence evidence
+This design prioritizes **faithfulness over fluency**, preventing confident but unsupported outputs.
 
-A fusion module arbitrates which evidence is safe to use.
+---
 
-🔹 Controlled Generation
+## 6. Implementation Details
 
-The LLM is guided with:
+- **Language:** Python 3.9+  
+- **Retrieval:** FAISS-based indexing and custom retrievers  
+- **Embeddings:** Sentence-level semantic embeddings  
+- **LLM Backend:** Local LLM via Ollama  
+- **Interface:** Streamlit-based user interface  
 
-Only trusted evidence
+The system is modular and extensible, supporting experimentation with alternative retrieval or arbitration strategies.
 
-Explicit instructions to abstain when confidence is low
+---
 
-This prevents:
+## 7. Repository Structure
 
-Hallucinated answers
-
-Overconfident responses from weak evidence
-
-🔬 Key Features
-
-✅ Multi-agent retrieval (semantic, keyword, contradiction-aware)
-
-✅ Confidence-weighted evidence fusion
-
-✅ Explicit contradiction handling
-
-✅ Abstention on insufficient evidence
-
-✅ Local LLM support (Ollama-compatible)
-
-✅ Streamlit-based interactive interface
-
-📂 Project Structure
+```text
 confidence-weighted-rag/
-│
 ├── app/
-│   ├── api/                # Upload & query endpoints
-│   ├── retrievers/         # Multi-agent retrievers
-│   ├── arbitration/        # Confidence scoring & fusion
-│   ├── llm/                # LLM generator interface
-│   └── main.py             # Application entry
-│
+│   ├── api/                # Query and upload interfaces
+│   ├── retrievers/         # Independent retrieval agents
+│   ├── arbitration/        # Confidence scoring and fusion
+│   ├── llm/                # Generation logic
+│   └── main.py             # Application entry point
 ├── data/
 │   ├── index/              # Vector indices
 │   └── uploads/            # Uploaded documents
-│
-├── streamlit_app.py        # UI
-├── test_*.py               # Evaluation tests
+├── streamlit_app.py
+├── test_*.py
 └── README.md
-
-⚙️ Tech Stack
-
-Language: Python 3.9+
-
-LLM: Ollama (CodeLLaMA / compatible models)
-
-Retrieval: FAISS, custom retrievers
-
-Embeddings: Sentence-level embeddings
-
-Frontend: Streamlit
-
-Backend: Modular Python architecture
-
-🚀 How It Works (High Level)
-
-User uploads PDFs
-
-Documents are indexed
-
-Query triggers parallel retrieval agents
-
-Evidence is scored & arbitrated
-
-LLM generates:
-
-an answer or
-
-an abstention if confidence is low
-
-📊 Example Behavior
-Scenario	System Response
-Strong agreement across agents	Confident answer
-Conflicting evidence	Abstains with explanation
-Insufficient evidence	“Insufficient evidence to answer”
-🧪 Evaluation Philosophy
-
-CW-MARAG prioritizes:
-
-Correct abstention over wrong answers
-
-Faithfulness over fluency
-
-Explainability over blind confidence
-
-This aligns with emerging best practices in trustworthy AI and responsible RAG systems.
-
-📚 Research & Novelty
-What makes CW-MARAG different?
-
-Confidence-weighted arbitration (not simple ranking)
-
-Explicit contradiction modeling
-
-Multi-agent evidence disagreement handling
-
-Generator-level abstention logic
-
-These aspects make CW-MARAG suitable for:
-
-Research publication
-
-Patent filing
-
-High-stakes QA systems
-
-🔒 License
-
-MIT License — open for research and extension.
-
-👤 Author
-
-Alex Rohith
-AI & ML Engineer
-Focus areas: RAG systems, LLM reliability, trustworthy AI
